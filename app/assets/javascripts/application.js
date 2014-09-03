@@ -12,20 +12,14 @@
 //
 //= require jquery
 //= require jquery_ujs
-//= require_tree .
 
-
-$(document).ready(function() {
-
-  var body = $("body");
-
-  body.attr('style', 'text-align: center');
+$(document).ready(function () {
 
   var formHtml = "";
 
   formHtml += "<h1>Todoly</h1>";
-  formHtml += "<form>";
-  formHtml += "<input type='text' name='todo' id='todo' />";
+  formHtml += "<form id='createToDo'>";
+  formHtml += "<input type='text' name='todo' id='todo' autofocus='true' />";
   formHtml += "<br>";
   formHtml += "<input type='submit' value='Create Todo' id='addtodo'/>";
   formHtml += "</form>";
@@ -33,50 +27,93 @@ $(document).ready(function() {
   var todosHtml = "";
 
   todosHtml += "<h2>Todo!</h2>";
-  todosHtml += "<div id='flashmsgs'></div>"
-  todosHtml += "<ul>";
-  todosHtml += "<li></li>";
+  todosHtml += "<div id='flashmsgs'></div>";
+  todosHtml += "<ul id='listOfToDo'>";
   todosHtml += "</ul>";
+
+  var body = $("body");
 
   body.append(formHtml + todosHtml);
 
-  $("#addtodo").on("click", function (e) {
-    e.preventDefault();
-    var flashmsg = "<div id='flashmsg'>Todo Created <span class='closeflashmsg'>x</span></div>";
-    var todo = $("#todo").val();
-    $("#flashmsgs").append(flashmsg);
-    body.append("<li>" + todo + "<span class='closetodos'>x</span></li>");
-    $("#flashmsg").fadeOut(8000);
-    setTimeout(function () {
-      $("#flashmsg").remove();
-    }, 8000);
+  var initialList = $.get("/todos");
 
-    $(".closeflashmsg").on("click", function () {
-      $(this).parent("#flashmsg").remove()
-    });
-
-    $(".closetodos").on("click", function () {
-      $(this).parent("li").remove()
-    });
-
-
-
-
+  initialList.done(function (arrayOfToDos) {
+    arrayOfToDos.forEach(function (singleToDo) {
+      var toDoHtml = "<li id='todo-list'>" + singleToDo.todo + "<span class='deleteToDo'>x</span></li>";
+      $("#listOfToDo").append(toDoHtml);
+    })
   });
 
-//  var body = $("body");
+  $(document).on("click", ".deleteToDo", function () {
 
-//  alert(body.length);
+    var li = $(this).parent("li"),
 
-//  body.append("<a href='/hello' id='Miji'>Mi Ji</a>");
+      object = $.parseHTML(li.html());
 
-//  var linkClick = function(event) {
-//    $(event.target).parents('li');
-//    event.preventDefault();
-//    alert("hello")
-//  }
-//
-//  $("a").on("click", linkClick);
+    console.log(object[0].data);
+
+    var destroy = $.ajax ({
+      type: "DELETE",
+      url: "/todos/" + object[0].data,
+      data: { todo: object[0].data }
+    });
+
+    destroy.done( function () {
+      li.remove()
+    } )
 
 });
 
+
+$(document).ready(function () {
+
+  $("#createToDo").on("submit", function () {
+    var todo = $("#todo");
+//    console.log(todo.val());
+    var post = $.post("/todos", { todo: todo.val()});
+
+    post.done(function (response) {
+
+      var toDoHtml = "<li id='todo-list'>" + response.todo + "<span class='deleteToDo'>x</span></li>";
+      $("#listOfToDo").append(toDoHtml);
+      todo.val("")
+
+    });
+
+    post.fail(function (jqXHR) {
+      console.log(jqXHR.responseJSON.errors);
+      alert(jqXHR.responseJSON.errors[0])
+    });
+
+    return false;
+  });
+
+});
+
+
+
+//  $(".deleteToDo").on('click', function () {
+//   $(this).parent('li').remove();
+//  });
+
+//  $(".deleteToDo").on("click", function () {
+//    alert("clicked");
+//
+//    var li = $(this).parent("li");
+//
+//    console.log(li);
+
+//    var destroy = $.ajax({
+//      url: "/todos/"
+//    })
+
+//  });
+});
+//    how to tackle delete/complete individual todo
+//    turn this string into jquery object and use jquery .on (event)
+//    data attribute data-id = response.id
+
+
+//  $("#todo").on("keyup", function (event) {
+//    console.log(event.target.value)
+//  });

@@ -40,3 +40,7 @@ li {
 span {
     float: right
 }
+
+ul {
+    padding: 0;
+}
